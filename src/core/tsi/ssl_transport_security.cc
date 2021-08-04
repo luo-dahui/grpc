@@ -740,7 +740,6 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
   while (true) {
     root = PEM_read_bio_X509_AUX(pem, nullptr, nullptr, const_cast<char*>(""));
     if (root == nullptr) {
-      gpr_log(GPR_ERROR, "PEM_read_bio_X509_AUX failed.");
       ERR_clear_error();
       break; /* We're at the end of stream. */
     }
@@ -795,11 +794,9 @@ static tsi_result ssl_ctx_load_verification_certs(SSL_CTX* context,
                                                   size_t pem_roots_size,
                                                   STACK_OF(X509_NAME) *
                                                       *root_name) {
-  gpr_log(GPR_INFO, "SSL_CTX_get_cert_store.");
   X509_STORE* cert_store = SSL_CTX_get_cert_store(context);
   X509_STORE_set_flags(cert_store,
                        X509_V_FLAG_PARTIAL_CHAIN | X509_V_FLAG_TRUSTED_FIRST);
-  gpr_log(GPR_INFO, "x509_store_load_certs.");
   return x509_store_load_certs(cert_store, pem_roots, pem_roots_size,
                                root_name);
 }
@@ -2056,9 +2053,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   tsi_result result = TSI_OK;
   size_t i = 0;
 
-  gpr_log(GPR_INFO, "start init openssl.");
   gpr_once_init(&g_init_openssl_once, init_openssl);
-  gpr_log(GPR_INFO, "end init openssl.");
 
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
@@ -2069,7 +2064,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 
   impl = static_cast<tsi_ssl_server_handshaker_factory*>(
       gpr_zalloc(sizeof(*impl)));
-  gpr_log(GPR_INFO, "start tsi_ssl_handshaker_factory_init.");
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &server_handshaker_factory_vtable;
 
@@ -2143,7 +2137,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 
       if (options->pem_client_root_certs != nullptr) {
         STACK_OF(X509_NAME)* root_names = nullptr;
-        gpr_log(GPR_INFO, "start ssl_ctx_load_verification_certs, is gmssl========%d.", options->is_gmssl);
         result = ssl_ctx_load_verification_certs(
             impl->ssl_contexts[i], options->pem_client_root_certs,
             strlen(options->pem_client_root_certs), &root_names);
@@ -2205,162 +2198,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   *factory = impl;
   return TSI_OK;
 }
-
-tsi_result tsi_create_gmssl_server_handshaker_factory_with_options(
-    const tsi_ssl_server_handshaker_options* options,
-    tsi_ssl_server_handshaker_factory** factory) {
-
-  tsi_ssl_server_handshaker_factory* impl = nullptr;
-  tsi_result result = TSI_OK;
-  size_t i = 0;
-
-  gpr_once_init(&g_init_openssl_once, init_openssl);
-
-  if (factory == nullptr) return TSI_INVALID_ARGUMENT;
-  *factory = nullptr;
-  if (options->num_key_cert_pairs == 0 ||
-      options->pem_key_cert_pairs == nullptr) {
-    return TSI_INVALID_ARGUMENT;
-  }
-
-  impl = static_cast<tsi_ssl_server_handshaker_factory*>(
-      gpr_zalloc(sizeof(*impl)));
-
-  tsi_ssl_handshaker_factory_init(&impl->base);
-  impl->base.vtable = &server_handshaker_factory_vtable;
-
-  impl->ssl_contexts = static_cast<SSL_CTX**>(
-      gpr_zalloc(options->num_key_cert_pairs * sizeof(SSL_CTX*)));
-  impl->ssl_context_x509_subject_names = static_cast<tsi_peer*>(
-      gpr_zalloc(options->num_key_cert_pairs * sizeof(tsi_peer)));
-  if (impl->ssl_contexts == nullptr ||
-      impl->ssl_context_x509_subject_names == nullptr) {
-    tsi_ssl_handshaker_factory_unref(&impl->base);
-    return TSI_OUT_OF_RESOURCES;
-  }
-  impl->ssl_context_count = options->num_key_cert_pairs;
-
-  if (options->num_alpn_protocols > 0) {
-    result = build_alpn_protocol_name_list(
-        options->alpn_protocols, options->num_alpn_protocols,
-        &impl->alpn_protocol_list, &impl->alpn_protocol_list_length);
-    if (result != TSI_OK) {
-      tsi_ssl_handshaker_factory_unref(&impl->base);
-      return result;
-    }
-  }
-
-  gpr_log(GPR_INFO, "options->num_key_cert_pairs: %d.", options->num_key_cert_pairs);
-  for (i = 0; i < options->num_key_cert_pairs; i++) {
-    do {
-
-      impl->ssl_contexts[i] = SSL_CTX_new(TLS_method());
-      if (impl->ssl_contexts[i] == nullptr) {
-        log_ssl_error_stack();
-        gpr_log(GPR_ERROR, "Could not create ssl context.");
-        result = TSI_OUT_OF_RESOURCES;
-        break;
-      }
-
-      result = tsi_set_min_and_max_tls_versions(impl->ssl_contexts[i],
-                                                options->min_tls_version,
-                                                options->max_tls_version);
-      if (result != TSI_OK) return result;
-
-      result = populate_ssl_context(impl->ssl_contexts[i],
-                                    &options->pem_key_cert_pairs[i],
-                                    options->cipher_suites);
-      if (result != TSI_OK) break;
-
-      // TODO(elessar): Provide ability to disable session ticket keys.
-
-      // Allow client cache sessions (it's needed for OpenSSL only).
-      int set_sid_ctx_result = SSL_CTX_set_session_id_context(
-          impl->ssl_contexts[i], kSslSessionIdContext,
-          GPR_ARRAY_SIZE(kSslSessionIdContext));
-      if (set_sid_ctx_result == 0) {
-        gpr_log(GPR_ERROR, "Failed to set session id context.");
-        result = TSI_INTERNAL_ERROR;
-        break;
-      }
-
-      if (options->session_ticket_key != nullptr) {
-        if (SSL_CTX_set_tlsext_ticket_keys(
-                impl->ssl_contexts[i],
-                const_cast<char*>(options->session_ticket_key),
-                options->session_ticket_key_size) == 0) {
-          gpr_log(GPR_ERROR, "Invalid STEK size.");
-          result = TSI_INVALID_ARGUMENT;
-          break;
-        }
-      }
-
-      if (options->pem_client_root_certs != nullptr) {
-        STACK_OF(X509_NAME)* root_names = nullptr;
-        gpr_log(GPR_INFO, "start ssl_ctx_load_verification_certs, is gmssl========%d.", options->is_gmssl);
-        result = ssl_ctx_load_verification_certs(
-            impl->ssl_contexts[i], options->pem_client_root_certs,
-            strlen(options->pem_client_root_certs), &root_names);
-        if (result != TSI_OK) {
-          gpr_log(GPR_ERROR, "Invalid verification certs.");
-          break;
-        }
-        gpr_log(GPR_INFO, "end ssl_ctx_load_verification_certs.");
-        SSL_CTX_set_client_CA_list(impl->ssl_contexts[i], root_names);
-      }
-      switch (options->client_certificate_request) {
-        case TSI_DONT_REQUEST_CLIENT_CERTIFICATE:
-          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_NONE, nullptr);
-          break;
-        case TSI_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
-          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER,
-                             NullVerifyCallback);
-          break;
-        case TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY:
-          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER, nullptr);
-          break;
-        case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
-          SSL_CTX_set_verify(impl->ssl_contexts[i],
-                             SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                             NullVerifyCallback);
-          break;
-        case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY:
-          SSL_CTX_set_verify(impl->ssl_contexts[i],
-                             SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                             nullptr);
-          break;
-      }
-      /* TODO(jboeuf): Add revocation verification. */
-
-      result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
-          options->pem_key_cert_pairs[i].cert_chain,
-          &impl->ssl_context_x509_subject_names[i]);
-      if (result != TSI_OK) break;
-
-      SSL_CTX_set_tlsext_servername_callback(
-          impl->ssl_contexts[i],
-          ssl_server_handshaker_factory_servername_callback);
-      SSL_CTX_set_tlsext_servername_arg(impl->ssl_contexts[i], impl);
-#if TSI_OPENSSL_ALPN_SUPPORT
-      SSL_CTX_set_alpn_select_cb(impl->ssl_contexts[i],
-                                 server_handshaker_factory_alpn_callback, impl);
-#endif /* TSI_OPENSSL_ALPN_SUPPORT */
-      SSL_CTX_set_next_protos_advertised_cb(
-          impl->ssl_contexts[i],
-          server_handshaker_factory_npn_advertised_callback, impl);
-    } while (false);
-
-    if (result != TSI_OK) {
-      tsi_ssl_handshaker_factory_unref(&impl->base);
-      return result;
-    }
-  }
-
-  *factory = impl;
-  return TSI_OK;
-
-}
-
 
 /* --- tsi_ssl utils. --- */
 

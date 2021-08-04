@@ -312,10 +312,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
     const tsi_ssl_server_handshaker_options* options,
     tsi_ssl_server_handshaker_factory** factory);
 
-tsi_result tsi_create_gmssl_server_handshaker_factory_with_options(
-    const tsi_ssl_server_handshaker_options* options,
-    tsi_ssl_server_handshaker_factory** factory);
-
 /* Creates a server handshaker.
   - factory is the factory from which the handshaker will be created.
   - handshaker is the address of the handshaker pointer to be created.

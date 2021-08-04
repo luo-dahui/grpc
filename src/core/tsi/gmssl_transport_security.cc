@@ -740,7 +740,6 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
   while (true) {
     root = PEM_read_bio_X509_AUX(pem, nullptr, nullptr, const_cast<char*>(""));
     if (root == nullptr) {
-      gpr_log(GPR_ERROR, "PEM_read_bio_X509_AUX failed.");
       ERR_clear_error();
       break; /* We're at the end of stream. */
     }
