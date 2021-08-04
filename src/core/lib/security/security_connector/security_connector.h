@@ -30,7 +30,11 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/tsi/ssl_transport_security.h"
+#if USE_GMTASSL
+  #include "src/core/tsi/gmssl_transport_security.h"
+#else
+  #include "src/core/tsi/ssl_transport_security.h"
+#endif
 #include "src/core/tsi/transport_security_interface.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;

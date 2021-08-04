@@ -38,7 +38,12 @@
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/tsi/ssl_transport_security.h"
+
+#if USE_GMTASSL
+  #include "src/core/tsi/gmssl_transport_security.h"
+#else
+  #include "src/core/tsi/ssl_transport_security.h"
+#endif
 
 class grpc_httpcli_ssl_channel_security_connector final
     : public grpc_channel_security_connector {

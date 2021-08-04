@@ -41,7 +41,11 @@
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/tsi/ssl_transport_security.h"
+#if USE_GMTASSL
+  #include "src/core/tsi/gmssl_transport_security.h"
+#else
+  #include "src/core/tsi/ssl_transport_security.h"
+#endif
 #include "src/core/tsi/transport_security.h"
 
 namespace {
@@ -260,9 +264,21 @@ class grpc_ssl_server_security_connector
           server_credentials->config().min_tls_version);
       options.max_tls_version = grpc_get_tsi_tls_version(
           server_credentials->config().max_tls_version);
-      const tsi_result result =
+     
+      options.is_gmssl = server_credentials->config().is_gmssl;
+      tsi_result result;
+      if(options.is_gmssl) {
+         std::cout << "start tsi_create_gmssl_server_handshaker_factory_with_options" << std::endl;
+        result =
+          tsi_create_gmssl_server_handshaker_factory_with_options(
+              &options, &server_handshaker_factory_);
+      } else {
+        result =
           tsi_create_ssl_server_handshaker_factory_with_options(
               &options, &server_handshaker_factory_);
+      }
+      
+      std::cout << "end tsi_create_ssl_server_handshaker_factory_with_options" << std::endl;
       gpr_free(alpn_protocol_strings);
       if (result != TSI_OK) {
         gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",

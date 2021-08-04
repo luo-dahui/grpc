@@ -37,7 +37,11 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
-#include "src/core/tsi/ssl_transport_security.h"
+#if USE_GMTASSL
+  #include "src/core/tsi/gmssl_transport_security.h"
+#else
+  #include "src/core/tsi/ssl_transport_security.h"
+#endif
 
 /* -- Constants. -- */
 

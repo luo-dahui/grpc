@@ -55,6 +55,7 @@ struct grpc_ssl_server_certificate_config {
   grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs = nullptr;
   size_t num_key_cert_pairs = 0;
   char* pem_root_certs = nullptr;
+  bool is_gmssl = false;
 };
 
 struct grpc_ssl_server_certificate_config_fetcher {
@@ -93,7 +94,7 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
   void build_config(
       const char* pem_root_certs,
       grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs,
-      grpc_ssl_client_certificate_request_type client_certificate_request);
+      grpc_ssl_client_certificate_request_type client_certificate_request, bool is_gmssl);
 
   grpc_ssl_server_config config_;
   grpc_ssl_server_certificate_config_fetcher certificate_config_fetcher_;

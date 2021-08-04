@@ -254,13 +254,29 @@ if (gRPC_XDS_USER_AGENT_IS_CSHARP)
   add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.39.0\"")
 endif()
 
+option(USE_GMTASSL "" OFF) # ON OFF
+IF(USE_GMTASSL)
+  add_definitions(-DUSE_GMTASSL=1) # GMSSL
+ELSE()
+  add_definitions(-DUSE_OPENSSL=1) # OpenSSL
+ENDIF()
+
 include(cmake/abseil-cpp.cmake)
 include(cmake/address_sorting.cmake)
 include(cmake/benchmark.cmake)
 include(cmake/cares.cmake)
 include(cmake/protobuf.cmake)
 include(cmake/re2.cmake)
-include(cmake/ssl.cmake)
+IF(USE_GMTASSL)
+  # GMSSL
+  message(STATUS "using USE_GMTASSL=============")
+  include(cmake/gmssl.cmake)
+ELSE()
+  # OpenSSL
+  message(STATUS "using USE_OPENSSL=============")
+  include(cmake/ssl.cmake)
+ENDIF()
+
 include(cmake/upb.cmake)
 include(cmake/xxhash.cmake)
 include(cmake/zlib.cmake)
@@ -2061,6 +2077,7 @@ add_library(grpc
   src/core/tsi/ssl/session_cache/ssl_session_cache.cc
   src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
   src/core/tsi/ssl_transport_security.cc
+  src/core/tsi/gmssl_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
 )

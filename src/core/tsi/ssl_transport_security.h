@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
-#define GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
+#pragma once
+#if USE_OPENSSL
 
 #include <grpc/support/port_platform.h>
 
@@ -285,6 +285,7 @@ struct tsi_ssl_server_handshaker_options {
   /* The min and max TLS versions that will be negotiated by the handshaker. */
   tsi_tls_version min_tls_version;
   tsi_tls_version max_tls_version;
+  bool is_gmssl;
 
   tsi_ssl_server_handshaker_options()
       : pem_key_cert_pairs(nullptr),
@@ -297,7 +298,8 @@ struct tsi_ssl_server_handshaker_options {
         session_ticket_key(nullptr),
         session_ticket_key_size(0),
         min_tls_version(tsi_tls_version::TSI_TLS1_2),
-        max_tls_version(tsi_tls_version::TSI_TLS1_3) {}
+        max_tls_version(tsi_tls_version::TSI_TLS1_3), 
+        is_gmssl(false){}
 };
 
 /* Creates a server handshaker factory.
@@ -307,6 +309,10 @@ struct tsi_ssl_server_handshaker_options {
    - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
      where a parameter is invalid. */
 tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
+    const tsi_ssl_server_handshaker_options* options,
+    tsi_ssl_server_handshaker_factory** factory);
+
+tsi_result tsi_create_gmssl_server_handshaker_factory_with_options(
     const tsi_ssl_server_handshaker_options* options,
     tsi_ssl_server_handshaker_factory** factory);
 
@@ -361,4 +367,4 @@ tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
 tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
                                            tsi_peer_property* property);
 
-#endif /* GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H */
+#endif

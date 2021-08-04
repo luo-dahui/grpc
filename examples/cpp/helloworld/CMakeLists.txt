@@ -45,22 +45,51 @@ add_custom_command(
 # Include generated *.pb.h files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
+option(USE_GMTASSL "" OFF) # ON OFF
+IF(USE_GMTASSL)
+  add_definitions(-DUSE_GMTASSL=1) # GMSSL
+ELSE()
+  add_definitions(-DUSE_OPENSSL=1) # OpenSSL
+ENDIF()
+
 # hw_grpc_proto
 add_library(hw_grpc_proto
   ${hw_grpc_srcs}
   ${hw_grpc_hdrs}
   ${hw_proto_srcs}
   ${hw_proto_hdrs})
-target_link_libraries(hw_grpc_proto
-  ${_REFLECTION}
-  ${_GRPC_GRPCPP}
-  ${_PROTOBUF_LIBPROTOBUF})
+
+IF(USE_GMTASSL)
+  # GMSSL
+  set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../third_party)
+  include_directories(${THIRD_PARTY_DIR}/gmssl/include)
+  link_directories(${THIRD_PARTY_DIR}/gmssl/lib)
+  set(_gRPC_SSL_LIBRARIES tacrypto tassl)
+
+  target_link_libraries(hw_grpc_proto
+    ${_REFLECTION}
+    ${_GRPC_GRPCPP}
+    ${_PROTOBUF_LIBPROTOBUF}
+    ${_gRPC_SSL_LIBRARIES})
+    
+ELSE()
+  target_link_libraries(hw_grpc_proto
+    ${_REFLECTION}
+    ${_GRPC_GRPCPP}
+    ${_PROTOBUF_LIBPROTOBUF})
+ENDIF()
+
 
 # Targets greeter_[async_](client|server)
 foreach(_target
-  greeter_client greeter_server 
-  greeter_callback_client greeter_callback_server 
-  greeter_async_client greeter_async_client2 greeter_async_server)
+  # greeter_client greeter_server 
+  # greeter_callback_client greeter_callback_server 
+  # greeter_async_client greeter_async_client2 greeter_async_server
+  ssl_server
+  greeter_client
+  gmssl_server
+  ssl_client
+  )
   add_executable(${_target} "${_target}.cc")
   target_link_libraries(${_target}
     hw_grpc_proto

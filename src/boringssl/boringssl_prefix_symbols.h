@@ -16,6 +16,8 @@
 
 // BORINGSSL_ADD_PREFIX pastes two identifiers into one. It performs one
 // iteration of macro expansion on its arguments before pasting.
+#if USE_OPENSSL
+
 #define BORINGSSL_ADD_PREFIX(a, b) BORINGSSL_ADD_PREFIX_INNER(a, b)
 #define BORINGSSL_ADD_PREFIX_INNER(a, b) a ## _ ## b
 
@@ -3435,3 +3437,5 @@
 #define x509v3_hex_to_bytes BORINGSSL_ADD_PREFIX(BORINGSSL_PREFIX, x509v3_hex_to_bytes)
 #define x509v3_looks_like_dns_name BORINGSSL_ADD_PREFIX(BORINGSSL_PREFIX, x509v3_looks_like_dns_name)
 #define x509v3_name_cmp BORINGSSL_ADD_PREFIX(BORINGSSL_PREFIX, x509v3_name_cmp)
+
+#endif

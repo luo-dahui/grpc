@@ -35,7 +35,11 @@
 #include "src/core/lib/security/security_connector/load_system_roots_linux.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/tsi/ssl_transport_security.h"
+#if USE_GMTASSL
+  #include "src/core/tsi/gmssl_transport_security.h"
+#else
+  #include "src/core/tsi/ssl_transport_security.h"
+#endif
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
 

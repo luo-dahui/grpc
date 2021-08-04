@@ -630,6 +630,7 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
     Chttp2ServerArgsModifier args_modifier) {
   Chttp2ServerListener* listener =
       new Chttp2ServerListener(server, args, args_modifier);
+  std::cout << "Chttp2ServerListener::CreateWithAcceptor" << std::endl;
   grpc_error_handle error = grpc_tcp_server_create(
       &listener->tcp_server_shutdown_complete_, args, &listener->tcp_server_);
   if (error != GRPC_ERROR_NONE) {
@@ -639,7 +640,9 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
   // TODO(yangg) channelz
   TcpServerFdHandler** arg_val =
       grpc_channel_args_find_pointer<TcpServerFdHandler*>(args, name);
+  std::cout << "Chttp2ServerListener::grpc_tcp_server_create_fd_handler" << std::endl;
   *arg_val = grpc_tcp_server_create_fd_handler(listener->tcp_server_);
+  std::cout << "Chttp2ServerListener::AddListener" << std::endl;
   server->AddListener(OrphanablePtr<Server::ListenerInterface>(listener));
   return GRPC_ERROR_NONE;
 }
@@ -825,10 +828,12 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                       grpc_channel_args* args,
                                       Chttp2ServerArgsModifier args_modifier,
                                       int* port_num) {
+  std::cout << "start grpc_error_handle Chttp2ServerAddPort" << std::endl;
   if (strncmp(addr, "external:", 9) == 0) {
     return grpc_core::Chttp2ServerListener::CreateWithAcceptor(
         server, addr, args, args_modifier);
   }
+  std::cout << "end grpc_error_handle Chttp2ServerAddPort" << std::endl;
   *port_num = -1;
   grpc_resolved_addresses* resolved = nullptr;
   std::vector<grpc_error_handle> error_list;

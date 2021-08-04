@@ -16,7 +16,11 @@
  *
  */
 
-#include "src/core/tsi/ssl_transport_security.h"
+#if USE_GMTASSL
+  #include "src/core/tsi/gmssl_transport_security.h"
+#else
+  #include "src/core/tsi/ssl_transport_security.h"
+#endif
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>

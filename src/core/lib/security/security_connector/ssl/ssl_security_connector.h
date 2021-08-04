@@ -26,7 +26,11 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/tsi/ssl_transport_security.h"
+#if USE_GMTASSL
+  #include "src/core/tsi/gmssl_transport_security.h"
+#else
+  #include "src/core/tsi/ssl_transport_security.h"
+#endif
 #include "src/core/tsi/transport_security_interface.h"
 
 struct grpc_ssl_config {
@@ -65,6 +69,7 @@ struct grpc_ssl_server_config {
   char* pem_root_certs = nullptr;
   grpc_ssl_client_certificate_request_type client_certificate_request =
       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
+  bool is_gmssl = false;
   grpc_tls_version min_tls_version = grpc_tls_version::TLS1_2;
   grpc_tls_version max_tls_version = grpc_tls_version::TLS1_3;
 };

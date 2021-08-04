@@ -38,7 +38,11 @@
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/tsi/ssl_transport_security.h"
+#if USE_GMTASSL
+  #include "src/core/tsi/gmssl_transport_security.h"
+#else
+  #include "src/core/tsi/ssl_transport_security.h"
+#endif
 #include "src/core/tsi/transport_security.h"
 
 namespace grpc_core {

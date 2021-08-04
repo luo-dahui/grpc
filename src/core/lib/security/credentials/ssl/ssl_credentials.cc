@@ -24,7 +24,11 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/tsi/ssl_transport_security.h"
+#if USE_GMTASSL
+  #include "src/core/tsi/gmssl_transport_security.h"
+#else
+  #include "src/core/tsi/ssl_transport_security.h"
+#endif
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -180,7 +184,8 @@ grpc_ssl_server_credentials::grpc_ssl_server_credentials(
     build_config(options.certificate_config->pem_root_certs,
                  options.certificate_config->pem_key_cert_pairs,
                  options.certificate_config->num_key_cert_pairs,
-                 options.client_certificate_request);
+                 options.client_certificate_request, 
+                 options.certificate_config->is_gmssl);
   }
 }
 
@@ -216,12 +221,13 @@ tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(
 void grpc_ssl_server_credentials::build_config(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs,
-    grpc_ssl_client_certificate_request_type client_certificate_request) {
+    grpc_ssl_client_certificate_request_type client_certificate_request, bool is_gmssl) {
   config_.client_certificate_request = client_certificate_request;
   config_.pem_root_certs = gpr_strdup(pem_root_certs);
   config_.pem_key_cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(
       pem_key_cert_pairs, num_key_cert_pairs);
   config_.num_key_cert_pairs = num_key_cert_pairs;
+  config_.is_gmssl = is_gmssl;
 }
 
 void grpc_ssl_server_credentials::set_min_tls_version(
@@ -242,6 +248,7 @@ grpc_ssl_server_certificate_config* grpc_ssl_server_certificate_config_create(
       static_cast<grpc_ssl_server_certificate_config*>(
           gpr_zalloc(sizeof(grpc_ssl_server_certificate_config)));
   config->pem_root_certs = gpr_strdup(pem_root_certs);
+
   if (num_key_cert_pairs > 0) {
     GPR_ASSERT(pem_key_cert_pairs != nullptr);
     config->pem_key_cert_pairs = static_cast<grpc_ssl_pem_key_cert_pair*>(
@@ -320,6 +327,7 @@ grpc_server_credentials* grpc_ssl_server_credentials_create(
       force_client_auth
           ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
           : GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
+      false,
       reserved);
 }
 
@@ -327,6 +335,7 @@ grpc_server_credentials* grpc_ssl_server_credentials_create_ex(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
+    bool is_gmssl,
     void* reserved) {
   GRPC_API_TRACE(
       "grpc_ssl_server_credentials_create_ex("
@@ -340,6 +349,7 @@ grpc_server_credentials* grpc_ssl_server_credentials_create_ex(
   grpc_ssl_server_certificate_config* cert_config =
       grpc_ssl_server_certificate_config_create(
           pem_root_certs, pem_key_cert_pairs, num_key_cert_pairs);
+  cert_config->is_gmssl = is_gmssl;
   grpc_ssl_server_credentials_options* options =
       grpc_ssl_server_credentials_create_options_using_config(
           client_certificate_request, cert_config);
