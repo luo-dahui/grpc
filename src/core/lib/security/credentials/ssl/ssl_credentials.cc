@@ -52,12 +52,17 @@ grpc_ssl_credentials::grpc_ssl_credentials(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const grpc_ssl_verify_peer_options* verify_options)
     : grpc_channel_credentials(GRPC_CHANNEL_CREDENTIALS_TYPE_SSL) {
+  gpr_log(GPR_INFO, "grpc_ssl_credentials======.");
   build_config(pem_root_certs, pem_key_cert_pair, verify_options);
 }
 
 grpc_ssl_credentials::~grpc_ssl_credentials() {
   gpr_free(config_.pem_root_certs);
-  grpc_tsi_ssl_pem_key_cert_pairs_destroy(config_.pem_key_cert_pair, 1);
+  int cert_pair_num = 1;
+#if USE_GMTASSL
+  cert_pair_num = 2;
+#endif
+  grpc_tsi_ssl_pem_key_cert_pairs_destroy(config_.pem_key_cert_pair, cert_pair_num);
   if (config_.verify_options.verify_peer_destruct != nullptr) {
     config_.verify_options.verify_peer_destruct(
         config_.verify_options.verify_peer_callback_userdata);
@@ -83,6 +88,7 @@ grpc_ssl_credentials::create_security_connector(
           static_cast<tsi_ssl_session_cache*>(arg->value.pointer.p);
     }
   }
+  gpr_log(GPR_INFO, "create_security_connector, config_:%p======.", &config_);
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
       grpc_ssl_channel_security_connector_create(
           this->Ref(), std::move(call_creds), &config_, target,
@@ -99,16 +105,28 @@ grpc_ssl_credentials::create_security_connector(
 void grpc_ssl_credentials::build_config(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const grpc_ssl_verify_peer_options* verify_options) {
+  gpr_log(GPR_INFO, "build_config, config_:%p======.", &config_);
   config_.pem_root_certs = gpr_strdup(pem_root_certs);
+
+  int cert_pair_num = 1;
+#if USE_GMTASSL
+  cert_pair_num = 2;
+#endif
+
   if (pem_key_cert_pair != nullptr) {
-    GPR_ASSERT(pem_key_cert_pair->private_key != nullptr);
-    GPR_ASSERT(pem_key_cert_pair->cert_chain != nullptr);
+
     config_.pem_key_cert_pair = static_cast<tsi_ssl_pem_key_cert_pair*>(
-        gpr_zalloc(sizeof(tsi_ssl_pem_key_cert_pair)));
-    config_.pem_key_cert_pair->cert_chain =
-        gpr_strdup(pem_key_cert_pair->cert_chain);
-    config_.pem_key_cert_pair->private_key =
-        gpr_strdup(pem_key_cert_pair->private_key);
+        gpr_zalloc(cert_pair_num * sizeof(tsi_ssl_pem_key_cert_pair)));
+
+    for(int i = 0; i < cert_pair_num; ++i) {
+      GPR_ASSERT(pem_key_cert_pair[i].private_key != nullptr);
+      GPR_ASSERT(pem_key_cert_pair[i].cert_chain != nullptr);
+
+      config_.pem_key_cert_pair[i].cert_chain =
+          gpr_strdup(pem_key_cert_pair[i].cert_chain);
+      config_.pem_key_cert_pair[i].private_key =
+          gpr_strdup(pem_key_cert_pair[i].private_key);
+    }
   } else {
     config_.pem_key_cert_pair = nullptr;
   }

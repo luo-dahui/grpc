@@ -120,12 +120,22 @@ std::shared_ptr<CallCredentials> ExternalAccountCredentials(
 std::shared_ptr<ChannelCredentials> SslCredentials(
     const SslCredentialsOptions& options) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
-  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {
+  grpc_ssl_pem_key_cert_pair sig_pkcp = {
       options.pem_private_key.c_str(), options.pem_cert_chain.c_str()};
+
+  std::vector<grpc_ssl_pem_key_cert_pair> pem_key_cert_pairs;
+  pem_key_cert_pairs.push_back(sig_pkcp);
+
+#if USE_GMTASSL
+  // signature certificate
+  grpc_ssl_pem_key_cert_pair enc_pkcp = {
+      options.pem_enc_private_key.c_str(), options.pem_enc_cert_chain.c_str()};
+  pem_key_cert_pairs.push_back(enc_pkcp);
+#endif
 
   grpc_channel_credentials* c_creds = grpc_ssl_credentials_create(
       options.pem_root_certs.empty() ? nullptr : options.pem_root_certs.c_str(),
-      options.pem_private_key.empty() ? nullptr : &pem_key_cert_pair, nullptr,
+      options.pem_private_key.empty() ? nullptr : &pem_key_cert_pairs[0], nullptr,
       nullptr);
   return internal::WrapChannelCredentials(c_creds);
 }

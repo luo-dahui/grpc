@@ -771,14 +771,15 @@ static tsi_result populate_gmssl_context(
   }
 
   if (key_cert_pair != nullptr) {
+    gpr_log(GPR_INFO, "(*key_cert_pair).cert_chain:%s.", (*key_cert_pair).cert_chain);
     // check sign cert
-    if (SSL_CTX_use_certificate_file(context, key_cert_pair[0].cert_chain, SSL_FILETYPE_PEM) <= 0) {
+    if (SSL_CTX_use_certificate_file(context, (*key_cert_pair).cert_chain, SSL_FILETYPE_PEM) <= 0) {
       gpr_log(GPR_ERROR, "Init, SSL_CTX_use_certificate_file failed.");
       return TSI_INVALID_ARGUMENT;
     }
-
+    gpr_log(GPR_INFO, "key_cert_pair222:%p.", key_cert_pair);
     // check sign private key
-    if (SSL_CTX_use_PrivateKey_file(context, key_cert_pair[0].private_key, SSL_FILETYPE_PEM) <= 0) {
+    if (SSL_CTX_use_PrivateKey_file(context, (*key_cert_pair).private_key, SSL_FILETYPE_PEM) <= 0) {
       gpr_log(GPR_ERROR, "Init, SSL_CTX_use_PrivateKey_file failed.");
       return TSI_INVALID_ARGUMENT;
     }
@@ -788,15 +789,22 @@ static tsi_result populate_gmssl_context(
       gpr_log(GPR_ERROR, "Init, SSL_CTX_check_private_key failed.");
       return TSI_INVALID_ARGUMENT;
     }
-
+    gpr_log(GPR_INFO, "key_cert_pair33:%p.", key_cert_pair);
+    key_cert_pair++;
+    gpr_log(GPR_INFO, "key_cert_pair4444:%p.", key_cert_pair);
+    if (key_cert_pair == nullptr) {
+      gpr_log(GPR_ERROR, "Init failure: The encryption certificate is missing. Please check.");
+      return TSI_INVALID_ARGUMENT;
+    }
+    gpr_log(GPR_INFO, "(*key_cert_pair).cert_chain:%s.", (*key_cert_pair).cert_chain);
     // check enc cert
-    if (SSL_CTX_use_enc_certificate_file(context, key_cert_pair[1].cert_chain, SSL_FILETYPE_PEM) <= 0) {
+    if (SSL_CTX_use_enc_certificate_file(context, (*key_cert_pair).cert_chain, SSL_FILETYPE_PEM) <= 0) {
       gpr_log(GPR_ERROR, "Init, SSL_CTX_use_enc_certificate_file failed.");
       return TSI_INVALID_ARGUMENT;
     }
 
     // enc private key
-    if (SSL_CTX_use_enc_PrivateKey_file(context, key_cert_pair[1].private_key, SSL_FILETYPE_PEM) <= 0) {
+    if (SSL_CTX_use_enc_PrivateKey_file(context, (*key_cert_pair).private_key, SSL_FILETYPE_PEM) <= 0) {
       gpr_log(GPR_ERROR, "Init, SSL_CTX_use_enc_PrivateKey_file failed.");
       return TSI_INVALID_ARGUMENT;
     }
@@ -807,13 +815,13 @@ static tsi_result populate_gmssl_context(
       return TSI_INVALID_ARGUMENT;
     }
   }
-  /*
-  if ((cipher_list != nullptr) &&
-      !SSL_CTX_set_cipher_list(context, cipher_list)) {
-    gpr_log(GPR_ERROR, "Invalid cipher list: %s.", cipher_list);
-    return TSI_INVALID_ARGUMENT;
-  }
-  */
+  
+  // if ((cipher_list != nullptr) &&
+  //     !SSL_CTX_set_cipher_list(context, cipher_list)) {
+  //   gpr_log(GPR_ERROR, "Invalid cipher list: %s.", cipher_list);
+  //   return TSI_INVALID_ARGUMENT;
+  // }
+  
   SSL_CTX_set_verify_depth(context, 10);
   return TSI_OK;
 }
@@ -1871,6 +1879,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
     const char* pem_root_certs, const char* cipher_suites,
     const char** alpn_protocols, uint16_t num_alpn_protocols,
     tsi_ssl_client_handshaker_factory** factory) {
+  gpr_log(GPR_INFO, "tsi_create_ssl_client_handshaker_factory======.");
   tsi_ssl_client_handshaker_options options;
   options.pem_key_cert_pair = pem_key_cert_pair;
   options.pem_root_certs = pem_root_certs;
@@ -1884,10 +1893,12 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
 tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     const tsi_ssl_client_handshaker_options* options,
     tsi_ssl_client_handshaker_factory** factory) {
+  gpr_log(GPR_INFO, "tsi_create_ssl_client_handshaker_factory_with_options======.");
   SSL_CTX* ssl_context = nullptr;
   tsi_ssl_client_handshaker_factory* impl = nullptr;
   tsi_result result = TSI_OK;
 
+  gpr_log(GPR_INFO, "start init gmssl.");
   gpr_once_init(&g_init_gmssl_once, init_gmssl);
 
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
@@ -1895,18 +1906,15 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   if (options->pem_root_certs == nullptr && options->root_store == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
-
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-  ssl_context = SSL_CTX_new(TLS_method());
-#else
-  ssl_context = SSL_CTX_new(TLSv1_2_method());
-#endif
+  gpr_log(GPR_INFO, "start SSL_CTX_new.");
+  ssl_context = SSL_CTX_new(CNTLS_client_method());
   if (ssl_context == nullptr) {
     log_ssl_error_stack();
     gpr_log(GPR_ERROR, "Could not create ssl context.");
     return TSI_INVALID_ARGUMENT;
   }
 
+  gpr_log(GPR_INFO, "tsi_set_min_and_max_tls_versions.");
   result = tsi_set_min_and_max_tls_versions(
       ssl_context, options->min_tls_version, options->max_tls_version);
   if (result != TSI_OK) return result;
@@ -1928,26 +1936,10 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   }
 
   do {
+    gpr_log(GPR_INFO, "populate_gmssl_context.");
     result = populate_gmssl_context(ssl_context, options->pem_key_cert_pair,
                                   options->cipher_suites, options->pem_root_certs);
     if (result != TSI_OK) break;
-
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-    // X509_STORE_up_ref is only available since OpenSSL 1.1.
-    if (options->root_store != nullptr) {
-      X509_STORE_up_ref(options->root_store->store);
-      SSL_CTX_set_cert_store(ssl_context, options->root_store->store);
-    }
-#endif
-    if (OPENSSL_VERSION_NUMBER < 0x10100000 || options->root_store == nullptr) {
-      result = ssl_ctx_load_verification_certs(
-          ssl_context, options->pem_root_certs, strlen(options->pem_root_certs),
-          nullptr);
-      if (result != TSI_OK) {
-        gpr_log(GPR_ERROR, "Cannot load server root certificates.");
-        break;
-      }
-    }
 
     if (options->num_alpn_protocols != 0) {
       result = build_alpn_protocol_name_list(
@@ -1958,6 +1950,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
                 tsi_result_to_string(result));
         break;
       }
+
 #if TSI_OPENSSL_ALPN_SUPPORT
       GPR_ASSERT(impl->alpn_protocol_list_length < UINT_MAX);
       if (SSL_CTX_set_alpn_protos(
@@ -1984,6 +1977,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   /* TODO(jboeuf): Add revocation verification. */
 
   *factory = impl;
+
   return TSI_OK;
 }
 
