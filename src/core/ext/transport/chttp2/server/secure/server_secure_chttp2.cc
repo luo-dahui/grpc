@@ -94,13 +94,11 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
   // that assumption. As an immediate drawback of this workaround, config
   // fetchers need to be registered before adding ports to the server.
   if (server->core_server->config_fetcher() != nullptr) {
-    std::cout << "start grpc_server_add_secure_http2_port 111111====" << std::endl;
     // Create channel args.
     grpc_arg arg_to_add = grpc_server_credentials_to_arg(creds);
     args = grpc_channel_args_copy_and_add(server->core_server->channel_args(),
                                           &arg_to_add, 1);
   } else {
-    std::cout << "start grpc_server_add_secure_http2_port 222222====" << std::endl;
     sc = creds->create_security_connector(nullptr);
     if (sc == nullptr) {
       err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -111,20 +109,15 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
       goto done;
     }
     grpc_arg args_to_add[2];
-    std::cout << "grpc_server_credentials_to_arg====" << std::endl;
     args_to_add[0] = grpc_server_credentials_to_arg(creds);
-    std::cout << "grpc_security_connector_to_arg====" << std::endl;
     args_to_add[1] = grpc_security_connector_to_arg(sc.get());
-    std::cout << "grpc_channel_args_copy_and_add====" << std::endl;
     args = grpc_channel_args_copy_and_add(server->core_server->channel_args(),
                                           args_to_add,
                                           GPR_ARRAY_SIZE(args_to_add));
   }
   // Add server port.
-  std::cout << "start grpc_core::Chttp2ServerAddPort" << std::endl;
   err = grpc_core::Chttp2ServerAddPort(server->core_server.get(), addr, args,
                                        ModifyArgsForConnection, &port_num);
-  std::cout << "end grpc_core::Chttp2ServerAddPort" << std::endl;
 done:
   sc.reset(DEBUG_LOCATION, "server");
   if (err != GRPC_ERROR_NONE) {

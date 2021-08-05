@@ -30,7 +30,6 @@ namespace grpc {
 std::shared_ptr<grpc::Channel> CreateChannel(
     const grpc::string& target,
     const std::shared_ptr<grpc::ChannelCredentials>& creds) {
-  std::cout << "CreateChannel===" << std::endl;
   return CreateCustomChannel(target, creds, grpc::ChannelArguments());
 }
 
@@ -38,7 +37,6 @@ std::shared_ptr<grpc::Channel> CreateCustomChannel(
     const grpc::string& target,
     const std::shared_ptr<grpc::ChannelCredentials>& creds,
     const grpc::ChannelArguments& args) {
-  std::cout << "CreateCustomChannel, creds:" << creds << std::endl;
   grpc::GrpcLibraryCodegen
       init_lib;  // We need to call init in case of bad creds.
   return creds ? creds->CreateChannelImpl(target, args)

@@ -52,7 +52,6 @@ grpc_ssl_credentials::grpc_ssl_credentials(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const grpc_ssl_verify_peer_options* verify_options)
     : grpc_channel_credentials(GRPC_CHANNEL_CREDENTIALS_TYPE_SSL) {
-  gpr_log(GPR_INFO, "grpc_ssl_credentials======.");
   build_config(pem_root_certs, pem_key_cert_pair, verify_options);
 }
 
@@ -88,7 +87,7 @@ grpc_ssl_credentials::create_security_connector(
           static_cast<tsi_ssl_session_cache*>(arg->value.pointer.p);
     }
   }
-  gpr_log(GPR_INFO, "create_security_connector, config_:%p======.", &config_);
+
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
       grpc_ssl_channel_security_connector_create(
           this->Ref(), std::move(call_creds), &config_, target,
@@ -105,7 +104,6 @@ grpc_ssl_credentials::create_security_connector(
 void grpc_ssl_credentials::build_config(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const grpc_ssl_verify_peer_options* verify_options) {
-  gpr_log(GPR_INFO, "build_config, config_:%p======.", &config_);
   config_.pem_root_certs = gpr_strdup(pem_root_certs);
 
   int cert_pair_num = 1;

@@ -112,7 +112,6 @@ class grpc_ssl_channel_security_connector final
     options.session_cache = ssl_session_cache;
     options.min_tls_version = grpc_get_tsi_tls_version(config->min_tls_version);
     options.max_tls_version = grpc_get_tsi_tls_version(config->max_tls_version);
-    gpr_log(GPR_INFO, "InitializeHandshakerFactory:create ssl client======.");
     const tsi_result result =
         tsi_create_ssl_client_handshaker_factory_with_options(
             &options, &client_handshaker_factory_);
@@ -270,7 +269,6 @@ class grpc_ssl_server_security_connector
           tsi_create_ssl_server_handshaker_factory_with_options(
               &options, &server_handshaker_factory_);
       
-      std::cout << "end tsi_create_ssl_server_handshaker_factory_with_options" << std::endl;
       gpr_free(alpn_protocol_strings);
       if (result != TSI_OK) {
         gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
@@ -418,7 +416,6 @@ grpc_ssl_channel_security_connector_create(
     const char* overridden_target_name,
     tsi_ssl_session_cache* ssl_session_cache) {
 
-  gpr_log(GPR_INFO, "grpc_ssl_channel_security_connector_create======.");
   if (config == nullptr || target_name == nullptr) {
     gpr_log(GPR_ERROR, "An ssl channel needs a config and a target name.");
     return nullptr;
@@ -454,7 +451,6 @@ grpc_ssl_channel_security_connector_create(
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_ssl_server_security_connector_create(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_credentials) {
-  gpr_log(GPR_INFO, "grpc_ssl_server_security_connector_create======.");
   GPR_ASSERT(server_credentials != nullptr);
   grpc_core::RefCountedPtr<grpc_ssl_server_security_connector> c =
       grpc_core::MakeRefCounted<grpc_ssl_server_security_connector>(

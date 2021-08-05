@@ -741,11 +741,9 @@ static tsi_result ssl_ctx_load_verification_certs(SSL_CTX* context,
                                                   size_t pem_roots_size,
                                                   STACK_OF(X509_NAME) *
                                                       *root_name) {
-  gpr_log(GPR_INFO, "SSL_CTX_get_cert_store.");
   X509_STORE* cert_store = SSL_CTX_get_cert_store(context);
   X509_STORE_set_flags(cert_store,
                        X509_V_FLAG_PARTIAL_CHAIN | X509_V_FLAG_TRUSTED_FIRST);
-  gpr_log(GPR_INFO, "x509_store_load_certs.");
   return x509_store_load_certs(cert_store, pem_roots, pem_roots_size,
                                root_name);
 }
@@ -771,14 +769,14 @@ static tsi_result populate_gmssl_context(
   }
 
   if (key_cert_pair != nullptr) {
-    gpr_log(GPR_INFO, "(*key_cert_pair).cert_chain:%s.", (*key_cert_pair).cert_chain);
+    GPR_ASSERT((*key_cert_pair).cert_chain);
     // check sign cert
     if (SSL_CTX_use_certificate_file(context, (*key_cert_pair).cert_chain, SSL_FILETYPE_PEM) <= 0) {
       gpr_log(GPR_ERROR, "Init, SSL_CTX_use_certificate_file failed.");
       return TSI_INVALID_ARGUMENT;
     }
-    gpr_log(GPR_INFO, "key_cert_pair222:%p.", key_cert_pair);
     // check sign private key
+    GPR_ASSERT((*key_cert_pair).private_key);
     if (SSL_CTX_use_PrivateKey_file(context, (*key_cert_pair).private_key, SSL_FILETYPE_PEM) <= 0) {
       gpr_log(GPR_ERROR, "Init, SSL_CTX_use_PrivateKey_file failed.");
       return TSI_INVALID_ARGUMENT;
@@ -789,21 +787,20 @@ static tsi_result populate_gmssl_context(
       gpr_log(GPR_ERROR, "Init, SSL_CTX_check_private_key failed.");
       return TSI_INVALID_ARGUMENT;
     }
-    gpr_log(GPR_INFO, "key_cert_pair33:%p.", key_cert_pair);
     key_cert_pair++;
-    gpr_log(GPR_INFO, "key_cert_pair4444:%p.", key_cert_pair);
     if (key_cert_pair == nullptr) {
       gpr_log(GPR_ERROR, "Init failure: The encryption certificate is missing. Please check.");
       return TSI_INVALID_ARGUMENT;
     }
-    gpr_log(GPR_INFO, "(*key_cert_pair).cert_chain:%s.", (*key_cert_pair).cert_chain);
     // check enc cert
+    GPR_ASSERT((*key_cert_pair).cert_chain);
     if (SSL_CTX_use_enc_certificate_file(context, (*key_cert_pair).cert_chain, SSL_FILETYPE_PEM) <= 0) {
       gpr_log(GPR_ERROR, "Init, SSL_CTX_use_enc_certificate_file failed.");
       return TSI_INVALID_ARGUMENT;
     }
 
     // enc private key
+    GPR_ASSERT((*key_cert_pair).private_key);
     if (SSL_CTX_use_enc_PrivateKey_file(context, (*key_cert_pair).private_key, SSL_FILETYPE_PEM) <= 0) {
       gpr_log(GPR_ERROR, "Init, SSL_CTX_use_enc_PrivateKey_file failed.");
       return TSI_INVALID_ARGUMENT;
@@ -1899,12 +1896,10 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
 tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     const tsi_ssl_client_handshaker_options* options,
     tsi_ssl_client_handshaker_factory** factory) {
-  gpr_log(GPR_INFO, "tsi_create_ssl_client_handshaker_factory_with_options======.");
   SSL_CTX* ssl_context = nullptr;
   tsi_ssl_client_handshaker_factory* impl = nullptr;
   tsi_result result = TSI_OK;
 
-  gpr_log(GPR_INFO, "start init gmssl.");
   gpr_once_init(&g_init_gmssl_once, init_gmssl);
 
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
@@ -1912,7 +1907,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   if (options->pem_root_certs == nullptr && options->root_store == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
-  gpr_log(GPR_INFO, "start SSL_CTX_new.");
   ssl_context = SSL_CTX_new(CNTLS_client_method());
   if (ssl_context == nullptr) {
     log_ssl_error_stack();
@@ -1920,7 +1914,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     return TSI_INVALID_ARGUMENT;
   }
 
-  gpr_log(GPR_INFO, "tsi_set_min_and_max_tls_versions.");
   result = tsi_set_min_and_max_tls_versions(
       ssl_context, options->min_tls_version, options->max_tls_version);
   if (result != TSI_OK) return result;
@@ -1942,7 +1935,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   }
 
   do {
-    gpr_log(GPR_INFO, "populate_gmssl_context.");
     result = populate_gmssl_context(ssl_context, options->pem_key_cert_pair,
                                   options->cipher_suites, options->pem_root_certs);
     if (result != TSI_OK) break;
@@ -2124,8 +2116,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           break;
       }
       /* TODO(jboeuf): Add revocation verification. */
-      gpr_log(GPR_INFO, "options->pem_key_cert_pairs->cert_chainS:%s.",
-        options->pem_key_cert_pairs->cert_chain);
 
       /*
       result = tsi_ssl_extract_x509_subject_names_from_pem_cert(

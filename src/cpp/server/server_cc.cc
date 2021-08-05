@@ -1083,9 +1083,7 @@ void Server::RegisterCallbackGenericService(
 int Server::AddListeningPort(const std::string& addr,
                              grpc::ServerCredentials* creds) {
   GPR_ASSERT(!started_);
-  std::cout << "start AddPortToServer" << std::endl;
   int port = creds->AddPortToServer(addr, server_);
-  std::cout << "end AddPortToServer" << std::endl;
   global_callbacks_->AddPort(this, addr, creds, port);
   return port;
 }

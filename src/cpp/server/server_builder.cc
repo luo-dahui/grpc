@@ -416,7 +416,7 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
       *port.selected_port = r;
     }
   }
-  std::cout << "end ServerBuilder::BuildAndStart AddListeningPort" << std::endl;
+
   auto cqs_data = cqs_.empty() ? nullptr : &cqs_[0];
   server->Start(cqs_data, cqs_.size());
 
