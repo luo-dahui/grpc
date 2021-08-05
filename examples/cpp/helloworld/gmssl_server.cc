@@ -30,10 +30,6 @@ using helloworld::HelloReply;
 using helloworld::Greeter;
 using namespace std;
 
-const char clientcert_path[] = "./ssl_key/client_self_signed_crt.pem";
-const char servercert_path[] = "./ssl_key/server_self_signed_crt.pem";
-const char serverkey_path[]  = "./ssl_key/server_privatekey.pem";
-
 static std::string get_file_contents(const char *fpath)
 {
   std::ifstream finstream(fpath);
@@ -56,15 +52,11 @@ class GreeterServiceImpl final : public Greeter::Service {
 
 void RunServer(char** argv) {
   // std::string server_address("localhost:50051");
-  // std::string server_address("192.168.21.126:50051");
+  std::string server_address("192.168.2.128:50051");
   // std::string server_address("0.0.0.0:50051");
-  std::string server_address("127.0.0.1:50051");
+  // std::string server_address("127.0.0.1:50051");
   
   GreeterServiceImpl service;
-
-  // auto root_crt = get_file_contents(clientcert_path); // for verifying clients
-  // auto servercert = get_file_contents(servercert_path);
-  // auto serverkey  = get_file_contents(serverkey_path);
 
   string root_crt = argv[1]; // for verifying clients
   // 签名证书

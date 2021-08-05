@@ -832,6 +832,9 @@ tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
   tsi_result result = TSI_OK;
   X509* cert = nullptr;
   BIO* pem;
+
+  gpr_log(GPR_INFO, "pem_cert:%s.", pem_cert);
+
   pem = BIO_new_mem_buf(pem_cert, static_cast<int>(strlen(pem_cert)));
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
 
@@ -1812,6 +1815,7 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
     return SSL_TLSEXT_ERR_NOACK;
   }
 
+  /*
   for (i = 0; i < impl->ssl_context_count; i++) {
     if (tsi_ssl_peer_matches_name(&impl->ssl_context_x509_subject_names[i],
                                   servername)) {
@@ -1821,6 +1825,8 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
   }
   gpr_log(GPR_ERROR, "No match found for server name: %s.", servername);
   return SSL_TLSEXT_ERR_NOACK;
+  */
+  return SSL_TLSEXT_ERR_OK;
 }
 
 #if TSI_OPENSSL_ALPN_SUPPORT
@@ -2118,6 +2124,16 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           break;
       }
       /* TODO(jboeuf): Add revocation verification. */
+      gpr_log(GPR_INFO, "options->pem_key_cert_pairs->cert_chainS:%s.",
+        options->pem_key_cert_pairs->cert_chain);
+
+      /*
+      result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
+          options->pem_key_cert_pairs->cert_chain,
+          impl->ssl_context_x509_subject_names);
+      if (result != TSI_OK) break;
+      */
+
       SSL_CTX_set_tlsext_servername_callback(
           *(impl->ssl_contexts),
           ssl_server_handshaker_factory_servername_callback);

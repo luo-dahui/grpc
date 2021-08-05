@@ -162,5 +162,4 @@ compile_commands.json
 *.cert
 *.key
 *.pem
-openssl.cnf
 cmake_install.cmake

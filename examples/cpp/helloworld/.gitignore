@@ -7,9 +7,9 @@ greeter_async_client
 greeter_async_client2
 greeter_async_server
 
+build/*
 # cert
 gmssl_key/certs/*.crt
 gmssl_key/certs/*.key
 gmssl_key/certs/*.pem
-openssl.cnf
 cmake_install.cmake

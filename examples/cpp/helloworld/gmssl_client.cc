@@ -87,8 +87,10 @@ int main(int argc, char** argv) {
 
   std::shared_ptr<grpc::ChannelCredentials> creds = grpc::SslCredentials(ssl_opts);
 
-  std::string server_address("127.0.0.1:50051");
+  // std::string server_address("127.0.0.1:50051");
   // std::string server_address("localhost:50051");
+  // std::string server_address("0.0.0.0:50051");
+  std::string server_address("192.168.2.128:50051");
   GreeterClient greeter(grpc::CreateChannel(
       server_address, creds));
 
