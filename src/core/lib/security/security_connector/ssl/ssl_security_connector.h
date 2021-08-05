@@ -69,7 +69,6 @@ struct grpc_ssl_server_config {
   char* pem_root_certs = nullptr;
   grpc_ssl_client_certificate_request_type client_certificate_request =
       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
-  bool is_gmssl = false;
   grpc_tls_version min_tls_version = grpc_tls_version::TLS1_2;
   grpc_tls_version max_tls_version = grpc_tls_version::TLS1_3;
 };

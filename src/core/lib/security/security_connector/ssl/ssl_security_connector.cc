@@ -265,7 +265,6 @@ class grpc_ssl_server_security_connector
       options.max_tls_version = grpc_get_tsi_tls_version(
           server_credentials->config().max_tls_version);
      
-      options.is_gmssl = server_credentials->config().is_gmssl;
       tsi_result result =
           tsi_create_ssl_server_handshaker_factory_with_options(
               &options, &server_handshaker_factory_);

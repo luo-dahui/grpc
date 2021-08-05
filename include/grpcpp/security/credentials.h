@@ -163,6 +163,12 @@ struct SslCredentialsOptions {
   /// This parameter can be empty if the client does not have a certificate
   /// chain.
   grpc::string pem_cert_chain;
+
+  // GMSSL encryption certificate private key
+  grpc::string pem_enc_private_key;
+
+  // GMSSL encryption certificate  
+  grpc::string pem_enc_cert_chain;
 };
 
 // Factories for building different types of Credentials The functions may

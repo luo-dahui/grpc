@@ -39,11 +39,10 @@ struct SslServerCredentialsOptions {
   /// \warning Deprecated
   SslServerCredentialsOptions()
       : force_client_auth(false),
-        is_gmssl(false),
         client_certificate_request(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {}
   explicit SslServerCredentialsOptions(
       grpc_ssl_client_certificate_request_type request_type)
-      : force_client_auth(false), is_gmssl(false),client_certificate_request(request_type) {}
+      : force_client_auth(false),client_certificate_request(request_type) {}
 
   struct PemKeyCertPair {
     std::string private_key;
@@ -53,7 +52,6 @@ struct SslServerCredentialsOptions {
   std::vector<PemKeyCertPair> pem_key_cert_pairs;
   /// \warning Deprecated
   bool force_client_auth;
-  bool is_gmssl;
 
   /// If both \a force_client_auth and \a client_certificate_request
   /// fields are set, \a force_client_auth takes effect, i.e.

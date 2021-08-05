@@ -68,7 +68,6 @@ void RunServer(char** argv) {
   grpc::SslServerCredentialsOptions ssl_opts(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   ssl_opts.pem_root_certs = root_crt;
   ssl_opts.pem_key_cert_pairs.push_back(pkcp);
-  ssl_opts.is_gmssl = true;
   
   std::shared_ptr<grpc::ServerCredentials> creds;
   creds = grpc::SslServerCredentials(ssl_opts);

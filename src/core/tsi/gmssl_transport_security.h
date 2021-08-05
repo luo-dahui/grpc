@@ -267,7 +267,6 @@ struct tsi_ssl_server_handshaker_options {
   /* The min and max TLS versions that will be negotiated by the handshaker. */
   tsi_tls_version min_tls_version;
   tsi_tls_version max_tls_version;
-  bool is_gmssl;
 
   tsi_ssl_server_handshaker_options()
       : pem_key_cert_pairs(nullptr),
@@ -280,8 +279,7 @@ struct tsi_ssl_server_handshaker_options {
         session_ticket_key(nullptr),
         session_ticket_key_size(0),
         min_tls_version(tsi_tls_version::TSI_TLS1_2),
-        max_tls_version(tsi_tls_version::TSI_TLS1_3), 
-        is_gmssl(false){}
+        max_tls_version(tsi_tls_version::TSI_TLS1_3){}
 };
 
 /* Creates a server handshaker factory.

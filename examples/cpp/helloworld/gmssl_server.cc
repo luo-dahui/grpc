@@ -48,7 +48,7 @@ static std::string get_file_contents(const char *fpath)
 class GreeterServiceImpl final : public Greeter::Service {
   Status SayHello(ServerContext* context, const HelloRequest* request,
                   HelloReply* reply) override {
-    std::string prefix("Hello ");
+    std::string prefix("GMSSL Server Respon: Hello ");
     reply->set_message(prefix + request->name());
     return Status::OK;
   }
@@ -86,7 +86,6 @@ void RunServer(char** argv) {
   ssl_opts.pem_root_certs = root_crt;
   ssl_opts.pem_key_cert_pairs.push_back(sig_pkcp);
   ssl_opts.pem_key_cert_pairs.push_back(enc_pkcp);
-  ssl_opts.is_gmssl = true;
   std::shared_ptr<grpc::ServerCredentials> creds;
   creds = grpc::SslServerCredentials(ssl_opts);
 
