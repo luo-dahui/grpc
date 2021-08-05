@@ -157,3 +157,10 @@ BenchmarkDotNet.Artifacts/
 
 # clang JSON compilation database file
 compile_commands.json
+
+# cert
+*.cert
+*.key
+*.pem
+openssl.cnf
+cmake_install.cmake

@@ -223,7 +223,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
    - client_certificate_request, if set to non-zero will force the client to
      authenticate with an SSL cert. Note that this option is ignored if
      pem_client_root_certs is NULL or pem_client_roots_certs_size is 0 */
-tsi_result tsi_create_ssl_server_handshaker_factory_ex(
+tsi_result tsi_create_gmssl_server_handshaker_factory_ex(
     const tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs, const char* pem_client_root_certs,
     tsi_client_certificate_request_type client_certificate_request,
@@ -291,10 +291,6 @@ struct tsi_ssl_server_handshaker_options {
    - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
      where a parameter is invalid. */
 tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
-    const tsi_ssl_server_handshaker_options* options,
-    tsi_ssl_server_handshaker_factory** factory);
-
-tsi_result tsi_create_gmssl_server_handshaker_factory_with_options(
     const tsi_ssl_server_handshaker_options* options,
     tsi_ssl_server_handshaker_factory** factory);
 

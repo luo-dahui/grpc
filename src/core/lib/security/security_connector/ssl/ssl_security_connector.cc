@@ -266,17 +266,9 @@ class grpc_ssl_server_security_connector
           server_credentials->config().max_tls_version);
      
       options.is_gmssl = server_credentials->config().is_gmssl;
-      tsi_result result;
-      if(options.is_gmssl) {
-         std::cout << "start tsi_create_gmssl_server_handshaker_factory_with_options" << std::endl;
-        result =
-          tsi_create_gmssl_server_handshaker_factory_with_options(
-              &options, &server_handshaker_factory_);
-      } else {
-        result =
+      tsi_result result =
           tsi_create_ssl_server_handshaker_factory_with_options(
               &options, &server_handshaker_factory_);
-      }
       
       std::cout << "end tsi_create_ssl_server_handshaker_factory_with_options" << std::endl;
       gpr_free(alpn_protocol_strings);
