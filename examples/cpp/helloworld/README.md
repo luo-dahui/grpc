@@ -69,7 +69,7 @@ Hello World app in the [C++ Quick Start][].
   在CMakeLists.txt中打开编译gmssl_client和gmssl_server，执行：
 
   ```bash
-  mkdir build && cd build && cmake .. -DUSE_GMTASSL
+  mkdir build && cd build && cmake .. -DUSE_GMTASSL=ON
   ```
 
 - 生成证书
