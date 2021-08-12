@@ -91,12 +91,19 @@ int main(int argc, char** argv) {
   // std::string server_address("localhost:50051");
   // std::string server_address("0.0.0.0:50051");
   std::string server_address("192.168.2.128:50051");
-  GreeterClient greeter(grpc::CreateChannel(
-      server_address, creds));
+  // GreeterClient greeter(grpc::CreateChannel(
+  //     server_address, creds));
+
+  grpc::ChannelArguments channel_args = grpc::ChannelArguments();
+  channel_args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, 10 * 1024 * 1024);
+  channel_args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 10 * 1024 * 1024);
+  GreeterClient greeter(grpc::CreateCustomChannel(
+      server_address, creds, channel_args));
 
   std::string user("world, I am GM client");
   std::string reply = greeter.SayHello(user);
   std::cout << "received: " << reply << std::endl;
 
+  sleep(10);
   return 0;
 }

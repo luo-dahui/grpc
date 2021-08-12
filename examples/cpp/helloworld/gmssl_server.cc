@@ -51,6 +51,8 @@ class GreeterServiceImpl final : public Greeter::Service {
 };
 
 void RunServer(char** argv) {
+  gpr_set_log_verbosity(GPR_LOG_SEVERITY_INFO);
+
   // std::string server_address("localhost:50051");
   std::string server_address("192.168.2.128:50051");
   // std::string server_address("0.0.0.0:50051");
@@ -85,7 +87,9 @@ void RunServer(char** argv) {
   builder.AddListeningPort(server_address, creds);
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "Server listening on " << server_address << std::endl;
+  // std::cout << "Server listening on " << server_address << std::endl;
+
+  gpr_log(GPR_DEBUG, "Server listening on %s.", server_address.c_str());
 
   // Wait for the server to shutdown. Note that some other thread must be
   // responsible for shutting down the server for this call to ever return.
