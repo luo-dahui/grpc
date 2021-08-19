@@ -183,3 +183,19 @@ documentation site at [grpc.io](https://grpc.io), specifically:
 # To start developing gRPC C++
 
 For instructions on how to build gRPC C++ from source, follow the [Building gRPC C++](../../BUILDING.md) instructions.
+
+# Compile GMSSL version gRPC C++
+```
+cd grpc
+mkdir -p cmake/build
+pushd cmake/build
+cmake -DgRPC_INSTALL=ON \
+      -DgRPC_BUILD_TESTS=OFF \
+      -DCMAKE_INSTALL_PREFIX=$HOME/.local \
+      -DUSE_GMTASSL=ON \
+      ../..
+make
+make install
+popd
+```
+
