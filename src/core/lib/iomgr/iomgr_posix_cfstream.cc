@@ -157,6 +157,7 @@ static grpc_iomgr_platform_vtable vtable = {
 void grpc_set_default_iomgr_platform() {
   CFStreamEnv env = ParseEnvForCFStream();
   if (!env.enable_cfstream) {
+    gpr_log(GPR_INFO, "grpc_set_default_iomgr_platform::enable_cfstream false.");
     // Use POSIX sockets for both client and server
     grpc_set_tcp_client_impl(&grpc_posix_tcp_client_vtable);
     grpc_set_tcp_server_impl(&grpc_posix_tcp_server_vtable);
@@ -164,6 +165,7 @@ void grpc_set_default_iomgr_platform() {
     grpc_set_pollset_set_vtable(&grpc_posix_pollset_set_vtable);
     grpc_set_iomgr_platform_vtable(&vtable);
   } else if (env.enable_cfstream && !env.enable_cfstream_run_loop) {
+    gpr_log(GPR_INFO, "grpc_set_default_iomgr_platform::enable_cfstream true.");
     // Use CFStream with dispatch queue for client; use POSIX sockets for server
     grpc_set_tcp_client_impl(&grpc_cfstream_client_vtable);
     grpc_set_tcp_server_impl(&grpc_posix_tcp_server_vtable);

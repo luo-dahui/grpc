@@ -282,6 +282,7 @@ class grpc_ssl_server_security_connector
   void add_handshakers(const grpc_channel_args* args,
                        grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
+    gpr_log(GPR_INFO, "start add_handshakers===");
     // Instantiate TSI handshaker.
     try_fetch_ssl_server_credentials();
     tsi_handshaker* tsi_hs = nullptr;

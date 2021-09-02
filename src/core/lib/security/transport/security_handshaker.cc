@@ -544,6 +544,7 @@ class ClientSecurityHandshakerFactory : public HandshakerFactory {
         reinterpret_cast<grpc_channel_security_connector*>(
             grpc_security_connector_find_in_args(args));
     if (security_connector) {
+      gpr_log(GPR_INFO, "ClientSecurityHandshakerFactory::AddHandshakers.");
       security_connector->add_handshakers(args, interested_parties,
                                           handshake_mgr);
     }
@@ -560,6 +561,7 @@ class ServerSecurityHandshakerFactory : public HandshakerFactory {
         reinterpret_cast<grpc_server_security_connector*>(
             grpc_security_connector_find_in_args(args));
     if (security_connector) {
+      gpr_log(GPR_INFO, "ServerSecurityHandshakerFactory::AddHandshakers.");
       security_connector->add_handshakers(args, interested_parties,
                                           handshake_mgr);
     }

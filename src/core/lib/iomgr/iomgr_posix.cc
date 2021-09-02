@@ -74,6 +74,7 @@ static grpc_iomgr_platform_vtable vtable = {
     iomgr_platform_add_closure_to_background_poller};
 
 void grpc_set_default_iomgr_platform() {
+  gpr_log(GPR_INFO, "grpc_set_default_iomgr_platform33333.");
   grpc_set_tcp_client_impl(&grpc_posix_tcp_client_vtable);
   grpc_set_tcp_server_impl(&grpc_posix_tcp_server_vtable);
   grpc_set_timer_impl(&grpc_generic_timer_vtable);

@@ -64,6 +64,7 @@ void HandshakerFactoryList::Register(
 void HandshakerFactoryList::AddHandshakers(const grpc_channel_args* args,
                                            grpc_pollset_set* interested_parties,
                                            HandshakeManager* handshake_mgr) {
+  gpr_log(GPR_INFO, "HandshakerFactoryList::AddHandshakers111===");
   for (size_t idx = 0; idx < factories_.size(); ++idx) {
     auto& handshaker_factory = factories_[idx];
     handshaker_factory->AddHandshakers(args, interested_parties, handshake_mgr);
@@ -99,6 +100,7 @@ void HandshakerRegistry::AddHandshakers(HandshakerType handshaker_type,
                                         HandshakeManager* handshake_mgr) {
   GPR_ASSERT(g_handshaker_factory_lists != nullptr);
   auto& factory_list = g_handshaker_factory_lists[handshaker_type];
+  gpr_log(GPR_INFO, "HandshakerRegistry::AddHandshakers111");
   factory_list.AddHandshakers(args, interested_parties, handshake_mgr);
 }
 

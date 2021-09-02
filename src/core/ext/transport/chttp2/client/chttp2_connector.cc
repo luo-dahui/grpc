@@ -120,6 +120,7 @@ void Chttp2Connector::Connected(void* arg, grpc_error_handle error) {
 
 void Chttp2Connector::StartHandshakeLocked() {
   handshake_mgr_ = MakeRefCounted<HandshakeManager>();
+  gpr_log(GPR_INFO, "Chttp2Connector::StartHandshakeLocked.");
   HandshakerRegistry::AddHandshakers(HANDSHAKER_CLIENT, args_.channel_args,
                                      args_.interested_parties,
                                      handshake_mgr_.get());

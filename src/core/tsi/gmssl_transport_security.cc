@@ -3,7 +3,6 @@
 #include <grpc/support/port_platform.h>
 #include "src/core/tsi/gmssl_transport_security.h"
 
-
 #include <limits.h>
 #include <string.h>
 
@@ -763,11 +762,6 @@ static tsi_result populate_gmssl_context(
   std::string pass = "12345678";
   SSL_CTX_set_default_passwd_cb_userdata(context, (void*)pass.c_str());
 
-  if (SSL_CTX_load_verify_locations(context, root_certs, NULL) <= 0) {
-    gpr_log(GPR_ERROR, "Init, SSL_CTX_load_verify_locations failed.");
-    return TSI_INVALID_ARGUMENT;
-  }
-
   if (key_cert_pair != nullptr) {
     GPR_ASSERT((*key_cert_pair).cert_chain);
     // check sign cert
@@ -787,6 +781,12 @@ static tsi_result populate_gmssl_context(
       gpr_log(GPR_ERROR, "Init, SSL_CTX_check_private_key failed.");
       return TSI_INVALID_ARGUMENT;
     }
+
+    if (SSL_CTX_load_verify_locations(context, root_certs, NULL) <= 0) {
+      gpr_log(GPR_ERROR, "Init, SSL_CTX_load_verify_locations failed.");
+      return TSI_INVALID_ARGUMENT;
+    }
+
     key_cert_pair++;
     if (key_cert_pair == nullptr) {
       gpr_log(GPR_ERROR, "Init failure: The encryption certificate is missing. Please check.");
@@ -818,10 +818,13 @@ static tsi_result populate_gmssl_context(
   //   gpr_log(GPR_ERROR, "Invalid cipher list: %s.", cipher_list);
   //   return TSI_INVALID_ARGUMENT;
   // }
-  
+
+
+  gpr_log(GPR_INFO, "verify succeed!");
   SSL_CTX_set_verify_depth(context, 10);
   return TSI_OK;
 }
+
 
 /* Extracts the CN and the SANs from an X509 cert as a peer object. */
 tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
@@ -1435,7 +1438,9 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
     return impl->result;
   } else {
     /* Get ready to get some bytes from SSL. */
+    gpr_log(GPR_INFO, "start SSL_do_handshake======1111.");
     int ssl_result = SSL_do_handshake(impl->ssl);
+    gpr_log(GPR_INFO, "start SSL_do_handshake======2222.");
     ssl_result = SSL_get_error(impl->ssl, ssl_result);
     switch (ssl_result) {
       case SSL_ERROR_WANT_READ:
@@ -1514,8 +1519,10 @@ static tsi_result ssl_handshaker_next(
   tsi_result status = TSI_OK;
   size_t bytes_consumed = received_bytes_size;
   if (received_bytes_size > 0) {
+    gpr_log(GPR_INFO, "start ssl_handshaker_process_bytes_from_peer======1111.");
     status = ssl_handshaker_process_bytes_from_peer(impl, received_bytes,
                                                     &bytes_consumed);
+    gpr_log(GPR_INFO, "start ssl_handshaker_process_bytes_from_peer======222.");                                                
     if (status != TSI_OK) return status;
   }
   /* Get bytes to send to the peer, if available.  */
@@ -1592,6 +1599,7 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
                                             const char* server_name_indication,
                                             tsi_ssl_handshaker_factory* factory,
                                             tsi_handshaker** handshaker) {
+  gpr_log(GPR_INFO, "create_tsi_ssl_handshaker======111.");
   SSL* ssl = SSL_new(ctx);
   BIO* network_io = nullptr;
   BIO* ssl_io = nullptr;
@@ -1655,6 +1663,7 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
   impl->base.vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
   *handshaker = &impl->base;
+  gpr_log(GPR_INFO, "end create_tsi_ssl_handshaker======.");
   return TSI_OK;
 }
 
@@ -1691,6 +1700,7 @@ static int select_protocol_list(const unsigned char** out,
 tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     tsi_ssl_client_handshaker_factory* factory,
     const char* server_name_indication, tsi_handshaker** handshaker) {
+  gpr_log(GPR_INFO, "tsi_ssl_client_handshaker_factory_create_handshaker.");
   return create_tsi_ssl_handshaker(factory->ssl_context, 1,
                                    server_name_indication, &factory->base,
                                    handshaker);
@@ -1730,6 +1740,7 @@ tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
   if (factory->ssl_context_count == 0) return TSI_INVALID_ARGUMENT;
   /* Create the handshaker with the first context. We will switch if needed
      because of SNI in ssl_server_handshaker_factory_servername_callback.  */
+  gpr_log(GPR_INFO, "tsi_ssl_server_handshaker_factory_create_handshaker.");
   return create_tsi_ssl_handshaker(factory->ssl_contexts[0], 0, nullptr,
                                    &factory->base, handshaker);
 }

@@ -313,6 +313,7 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
       deadline_(GetConnectionDeadline(args)),
       interested_parties_(grpc_pollset_set_create()) {
   grpc_pollset_set_add_pollset(interested_parties_, accepting_pollset_);
+  gpr_log(GPR_INFO, "Chttp2ServerListener::HandshakingState11.");
   HandshakerRegistry::AddHandshakers(HANDSHAKER_SERVER, args,
                                      interested_parties_, handshake_mgr_.get());
 }
@@ -374,6 +375,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::
 
 void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
     void* arg, grpc_error_handle error) {
+  gpr_log(GPR_INFO, "HandshakingState::OnHandshakeDone11.");
   auto* args = static_cast<HandshakerArgs*>(arg);
   HandshakingState* self = static_cast<HandshakingState*>(args->user_data);
   OrphanablePtr<HandshakingState> handshaking_state_ref;
@@ -502,6 +504,7 @@ Chttp2ServerListener::ActiveConnection::ActiveConnection(
     grpc_channel_args* args)
     : handshaking_state_(MakeOrphanable<HandshakingState>(
           Ref(), accepting_pollset, acceptor, args)) {
+  gpr_log(GPR_INFO, "ActiveConnection::ActiveConnection111.");
   GRPC_CLOSURE_INIT(&on_close_, ActiveConnection::OnClose, this,
                     grpc_schedule_on_exec_ctx);
 }
@@ -541,6 +544,7 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
 void Chttp2ServerListener::ActiveConnection::Start(
     RefCountedPtr<Chttp2ServerListener> listener, grpc_endpoint* endpoint,
     grpc_channel_args* args) {
+  gpr_log(GPR_INFO, "ActiveConnection::Start.");
   RefCountedPtr<HandshakingState> handshaking_state_ref;
   listener_ = std::move(listener);
   {
@@ -691,6 +695,7 @@ void Chttp2ServerListener::Start(
 }
 
 void Chttp2ServerListener::StartListening() {
+  gpr_log(GPR_INFO, "Chttp2ServerListener::StartListening111.");
   grpc_tcp_server_start(tcp_server_, &server_->pollsets(), OnAccept, this);
 }
 
@@ -702,6 +707,7 @@ void Chttp2ServerListener::SetOnDestroyDone(grpc_closure* on_destroy_done) {
 void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
                                     grpc_pollset* accepting_pollset,
                                     grpc_tcp_server_acceptor* acceptor) {
+  gpr_log(GPR_INFO, "Chttp2ServerListener::OnAccept111.");
   Chttp2ServerListener* self = static_cast<Chttp2ServerListener*>(arg);
   grpc_channel_args* args = nullptr;
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
@@ -793,6 +799,7 @@ void Chttp2ServerListener::TcpServerShutdownComplete(void* arg,
 /* Server callback: destroy the tcp listener (so we don't generate further
    callbacks) */
 void Chttp2ServerListener::Orphan() {
+  gpr_log(GPR_INFO, "Chttp2ServerListener::Orphan.");
   // Cancel the watch before shutting down so as to avoid holding a ref to the
   // listener in the watcher.
   if (config_fetcher_watcher_ != nullptr) {
