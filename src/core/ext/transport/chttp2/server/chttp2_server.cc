@@ -388,7 +388,8 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
     MutexLock connection_lock(&self->connection_->mu_);
     if (error != GRPC_ERROR_NONE || self->connection_->shutdown_) {
       std::string error_str = grpc_error_std_string(error);
-      gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str.c_str());
+      // gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str.c_str());
+      gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str.c_str());
       cleanup_connection = true;
       free_resource_quota = true;
       if (error == GRPC_ERROR_NONE && args->endpoint != nullptr) {

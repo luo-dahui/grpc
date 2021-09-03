@@ -30,77 +30,6 @@ using helloworld::HelloReply;
 using helloworld::Greeter;
 using namespace std;
 
-bool verify_enc(SSL_CTX* ctx, const string& enc_cert, const string& enc_key)
-{
-  cout << "verify_enc1111" << endl;
-  // enc cert
-  if (SSL_CTX_use_enc_certificate_file(ctx, enc_cert.c_str(), SSL_FILETYPE_PEM) <= 0) {
-    cout << "Init, SSL_CTX_use_enc_certificate_file failed." << endl;
-    return false;
-  }
-  cout << "verify_enc222" << endl;
-  // enc private key
-  if (SSL_CTX_use_enc_PrivateKey_file(ctx, enc_key.c_str(), SSL_FILETYPE_PEM) <= 0) {
-    cout << "Init, SSL_CTX_use_enc_PrivateKey_file failed." << endl;
-    return false;
-  }
-  cout << "verify_enc333" << endl;
-  // check enc private key is ok
-  if (!SSL_CTX_check_enc_private_key(ctx)) {
-    cout << "Init, SSL_CTX_check_enc_private_key failed." << endl;
-    return false;
-  }
-  cout << "verify_enc succeed!" << endl;
-  return true;
-}
-
-bool verify_sign(SSL_CTX* ctx, const string& sign_cert, const string& sign_key)
-{
-  cout << "test_gmssl6666, sersign_certvercert:" << sign_cert << endl;
-  // sign cert
-  if (SSL_CTX_use_certificate_file(ctx, sign_cert.c_str(), SSL_FILETYPE_PEM) <= 0) {
-    cout << "Init, SSL_CTX_use_certificate_file failed." << endl;
-    return false;
-  }
-  cout << "test_gmssl777" << endl;
-  // sign private key
-  if (SSL_CTX_use_PrivateKey_file(ctx, sign_key.c_str(), SSL_FILETYPE_PEM) <= 0) {
-    cout << "Init, SSL_CTX_use_PrivateKey_file failed." << endl;
-    return false;
-  }
-
-  // check sign private key is ok
-  if (!SSL_CTX_check_private_key(ctx)) {
-    cout << "Init, SSL_CTX_check_private_key failed." << endl;
-    return false;
-  }
-  return true;
-}
-
-bool init_gmssl()
-{
-  SSL_library_init();
-  OpenSSL_add_all_algorithms();
-  SSL_load_error_strings();
-  return true;
-}
-
-bool verify_root(SSL_CTX* ctx, const string& root_crt)
-{
-  cout << "start verify root" << endl;
-  SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
-
-  string pass = "123456";
-  SSL_CTX_set_default_passwd_cb_userdata(ctx, (void*)pass.c_str());
-  if (SSL_CTX_load_verify_locations(ctx, root_crt.c_str(), NULL) <= 0) 
-  {
-    cout << "Init, SSL_CTX_load_verify_locations failed." << endl;
-    return false;
-  }
-  cout << "verify root succeed!" << endl;
-  return true;
-}
-
 static std::string get_file_contents(const char *fpath)
 {
   std::ifstream finstream(fpath);
@@ -115,8 +44,6 @@ static std::string get_file_contents(const char *fpath)
 class GreeterServiceImpl final : public Greeter::Service {
   Status SayHello(ServerContext* context, const HelloRequest* request,
                   HelloReply* reply) override {
-
-    cout << "get request:" << request->name() << endl;
     std::string prefix("GMSSL Server Respon: Hello ");
     reply->set_message(prefix + request->name());
     return Status::OK;
@@ -124,7 +51,7 @@ class GreeterServiceImpl final : public Greeter::Service {
 };
 
 void RunServer(char** argv) {
-  gpr_set_log_verbosity(GPR_LOG_SEVERITY_INFO);
+  gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
 
   // std::string server_address("localhost:50051");
   // std::string server_address("192.168.2.128:50051");
@@ -149,8 +76,7 @@ void RunServer(char** argv) {
     enc_key.c_str(), enc_cert.c_str()
   };
 
-  // grpc::SslServerCredentialsOptions ssl_opts(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
-  grpc::SslServerCredentialsOptions ssl_opts;
+  grpc::SslServerCredentialsOptions ssl_opts(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   ssl_opts.pem_root_certs = root_crt;
   ssl_opts.pem_key_cert_pairs.push_back(sig_pkcp);
   ssl_opts.pem_key_cert_pairs.push_back(enc_pkcp);
@@ -161,8 +87,9 @@ void RunServer(char** argv) {
   builder.AddListeningPort(server_address, creds);
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
+  // std::cout << "Server listening on " << server_address << std::endl;
 
-  gpr_log(GPR_INFO, "Server listening on %s.", server_address.c_str());
+  gpr_log(GPR_DEBUG, "Server listening on %s.", server_address.c_str());
 
   // Wait for the server to shutdown. Note that some other thread must be
   // responsible for shutting down the server for this call to ever return.
@@ -171,58 +98,92 @@ void RunServer(char** argv) {
 
 int test_gmssl(char** argv) {
   SSL_CTX** ctx;
+  // auto root_crt = get_file_contents(argv[1]); // for verifying clients
   string root_crt = argv[1];
-  // 加密证书
-  string enc_key  = argv[2];
-  string enc_cert = argv[3];
   // 签名证书
-  string sign_key  = argv[4];
-  string sign_cert = argv[5];
+  string serverkey  = argv[2];
+  string servercert = argv[3];
+  // 加密证书
+  string enc_key  = argv[4];
+  string enc_cert = argv[5];
 
-  init_gmssl();
+  cout << "test_gmssl1111" << endl;
+  SSL_library_init();
+  OpenSSL_add_all_algorithms();
+  SSL_load_error_strings();
+
+  cout << "test_gmssl222" << endl;
   *ctx = SSL_CTX_new(SSLv23_server_method());
-  if (ctx == NULL) 
-  {
+
+  if (*ctx == NULL) {
+    // ERR_print_errors_fp(stdout);
     cout << "Init, SSL_CTX_new failed." << endl;
     return -1;
   }
+  cout << "test_gmssl333" << endl;
 
-  cout << "start verify root" << endl;
   if (!(SSL_CTX_set_mode(*ctx, SSL_MODE_AUTO_RETRY) & SSL_MODE_AUTO_RETRY)) {
     ERR_print_errors_fp(stdout);
     cout << "Init, SSL_CTX_set_mode failed." << endl;
-    return false;
+    return -1;
   }
+
+  cout << "test_gmssl444" << endl;
+
   SSL_CTX_set_verify(*ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 
   string pass = "123456";
   SSL_CTX_set_default_passwd_cb_userdata(*ctx, (void*)pass.c_str());
-
-  // sign
-  if(!verify_sign(*ctx, sign_cert, sign_key))
-  {
-    return -1;
-  }
-
-  // enc
-  if(!verify_enc(*ctx, enc_cert, enc_key))
-  {
-    return -1;
-  }
-
-  if (SSL_CTX_load_verify_locations(*ctx, root_crt.c_str(), NULL) <= 0) 
-  {
+  cout << "test_gmssl5555, root_crt:" << root_crt << endl;
+  if (SSL_CTX_load_verify_locations(*ctx, root_crt.c_str(), NULL) <= 0) {
     cout << "Init, SSL_CTX_load_verify_locations failed." << endl;
-    return false;
+    return -1;
   }
-  cout << "verify root succeed!" << endl;
+  
+  {
+    cout << "test_gmssl6666, servercert:" << servercert << endl;
+    // sign cert
+    if (SSL_CTX_use_certificate_file(*ctx, servercert.c_str(), SSL_FILETYPE_PEM) <= 0) {
+      cout << "Init, SSL_CTX_use_certificate_file failed." << endl;
+      return -1;
+    }
+    cout << "test_gmssl777" << endl;
+    // sign private key
+    if (SSL_CTX_use_PrivateKey_file(*ctx, serverkey.c_str(), SSL_FILETYPE_PEM) <= 0) {
+      cout << "Init, SSL_CTX_use_PrivateKey_file failed." << endl;
+      return -1;
+    }
+
+    // check sign private key is ok
+    if (!SSL_CTX_check_private_key(*ctx)) {
+      cout << "Init, SSL_CTX_check_private_key failed." << endl;
+      return -1;
+    }
+
+    // enc cert
+    if (SSL_CTX_use_enc_certificate_file(*ctx, enc_cert.c_str(), SSL_FILETYPE_PEM) <= 0) {
+      cout << "Init, SSL_CTX_use_enc_certificate_file failed." << endl;
+      return -1;
+    }
+
+    // enc private key
+    if (SSL_CTX_use_enc_PrivateKey_file(*ctx, enc_key.c_str(), SSL_FILETYPE_PEM) <= 0) {
+      cout << "Init, SSL_CTX_use_enc_PrivateKey_file failed." << endl;
+      return -1;
+    }
+
+    // check enc private key is ok
+    if (!SSL_CTX_check_enc_private_key(*ctx)) {
+      cout << "Init, SSL_CTX_check_enc_private_key failed." << endl;
+      return -1;
+    }
+  }
 
   SSL_CTX_set_verify_depth(*ctx, 10);
 
   cout << "init succeed====" << endl;
   return 0;
 }
-
 
 int main(int argc, char** argv) {
   RunServer(argv);

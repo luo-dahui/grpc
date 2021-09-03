@@ -819,8 +819,6 @@ static tsi_result populate_gmssl_context(
   //   return TSI_INVALID_ARGUMENT;
   // }
 
-
-  gpr_log(GPR_INFO, "verify succeed!");
   SSL_CTX_set_verify_depth(context, 10);
   return TSI_OK;
 }
