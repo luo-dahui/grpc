@@ -59,26 +59,31 @@ add_library(hw_grpc_proto
   ${hw_proto_srcs}
   ${hw_proto_hdrs})
 
-IF(USE_GMTASSL)
-  # GMSSL
-  set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../third_party)
-  include_directories(${THIRD_PARTY_DIR}/gmssl/include)
-  link_directories(${THIRD_PARTY_DIR}/gmssl/lib)
-  set(_gRPC_SSL_LIBRARIES tacrypto tassl)
+# IF(USE_GMTASSL)
+#   # GMSSL
+#   set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../third_party)
+#   include_directories(${THIRD_PARTY_DIR}/gmssl/include)
+#   link_directories(${THIRD_PARTY_DIR}/gmssl/lib)
+#   set(_gRPC_SSL_LIBRARIES tacrypto tassl)
 
-  target_link_libraries(hw_grpc_proto
-    ${_REFLECTION}
-    ${_GRPC_GRPCPP}
-    ${_PROTOBUF_LIBPROTOBUF}
-    ${_gRPC_SSL_LIBRARIES})
+#   target_link_libraries(hw_grpc_proto
+#     ${_REFLECTION}
+#     ${_GRPC_GRPCPP}
+#     ${_PROTOBUF_LIBPROTOBUF}
+#     ${_gRPC_SSL_LIBRARIES})
     
-ELSE()
-  target_link_libraries(hw_grpc_proto
-    ${_REFLECTION}
-    ${_GRPC_GRPCPP}
-    ${_PROTOBUF_LIBPROTOBUF})
-ENDIF()
+# ELSE()
+#   target_link_libraries(hw_grpc_proto
+#     ${_REFLECTION}
+#     ${_GRPC_GRPCPP}
+#     ${_PROTOBUF_LIBPROTOBUF})
+# ENDIF()
 
+
+target_link_libraries(hw_grpc_proto
+  ${_REFLECTION}
+  ${_GRPC_GRPCPP}
+  ${_PROTOBUF_LIBPROTOBUF})
 
 # Targets greeter_[async_](client|server)
 foreach(_target

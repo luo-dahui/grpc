@@ -20,10 +20,14 @@ if(gRPC_SSL_PROVIDER STREQUAL "module")
   #   endif()
   # endif()
 
+  
   include_directories(${THIRD_PARTY_DIR}/gmssl/include)
   link_directories(${THIRD_PARTY_DIR}/gmssl/lib)
-  # link_libraries(tacrypto tassl)
   set(_gRPC_SSL_INCLUDE_DIR ${THIRD_PARTY_DIR}/gmssl/include)
-  set(_gRPC_SSL_LIBRARIES tacrypto tassl)
+
+  # link_libraries(tacrypto tassl) 
+  set(_gRPC_SSL_LIB_DIR ${THIRD_PARTY_DIR}/gmssl/lib)
+  set(_gRPC_SSL_LIBRARIES ${_gRPC_SSL_LIB_DIR}/libtassl.a 
+    ${_gRPC_SSL_LIB_DIR}/libtacrypto.a )
 
 endif()
